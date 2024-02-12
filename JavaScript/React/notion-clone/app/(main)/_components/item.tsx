@@ -10,7 +10,7 @@ import {
     DropdownMenuTrigger,
     DropdownMenuContent,
     DropdownMenuItem,
-} from "@radix-ui/react-dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { useMutation } from "convex/react";
 import {
     ChevronDown,
@@ -33,7 +33,7 @@ interface ItemProps {
     level?: number;
     onExpand?: () => void;
     label: string;
-    onClick: () => void;
+    onClick?: () => void;
     icon: LucideIcon;
 }
 export const Item = ({
@@ -144,13 +144,13 @@ export const Item = ({
                             side="right"
                             forceMount
                         >
-                            <DropdownMenuItem onClick={() => {}}>
-                                <Trash className="h-4 w-4 mr-2 " />
+                            <DropdownMenuItem onClick={onArchive}>
+                                <Trash className="h-4 w-4 mr-2" />
                                 Delete
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <div className="text-xs text-muted-foreground p-2">
-                                Last edited by: {user?.fullName}
+                                Last edited by: {user?.username}
                             </div>
                         </DropdownMenuContent>
                     </DropdownMenu>
