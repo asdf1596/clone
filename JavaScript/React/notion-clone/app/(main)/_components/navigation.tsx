@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import {
     ChevronsLeft,
     MenuIcon,
@@ -10,12 +9,13 @@ import {
     Settings,
     Trash,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
-import { isAbsolute } from "path";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { ElementRef, useEffect, useRef, useState } from "react";
 import { useMediaQuery } from "usehooks-ts";
-import { UserItem } from "./user-item";
 import { useMutation } from "convex/react";
+import { toast } from "sonner";
+
+import { cn } from "@/lib/utils";
 import { api } from "@/convex/_generated/api";
 import {
     Popover,
@@ -24,28 +24,33 @@ import {
 } from "@/components/ui/popover";
 import { useSearch } from "@/hooks/use-search";
 import { useSettings } from "@/hooks/use-settings";
+
+import { UserItem } from "./user-item";
 import { Item } from "./item";
-import { toast } from "sonner";
 import { DocumentList } from "./document-list";
 import { TrashBox } from "./trash-box";
+import { Navbar } from "./navbar";
 
 export const Navigation = () => {
+    const router = useRouter();
     const settings = useSettings();
     const search = useSearch();
+    const params = useParams();
     const pathname = usePathname();
     const isMobile = useMediaQuery("(max-width: 768px)");
+    const create = useMutation(api.documents.create);
+
     const isResizingRef = useRef(false);
     const sidebarRef = useRef<ElementRef<"aside">>(null);
     const navbarRef = useRef<ElementRef<"div">>(null);
     const [isResetting, setIsResetting] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(isMobile);
-    const create = useMutation(api.documents.create);
 
     useEffect(() => {
         if (isMobile) {
             collapse();
         } else {
-            resetwith();
+            resetWidth();
         }
     }, [isMobile]);
 
@@ -63,7 +68,7 @@ export const Navigation = () => {
 
         isResizingRef.current = true;
         document.addEventListener("mousemove", handleMouseMove);
-        document.addEventListener("mouseup", handleMouseup);
+        document.addEventListener("mouseup", handleMouseUp);
     };
 
     const handleMouseMove = (event: MouseEvent) => {
@@ -83,13 +88,13 @@ export const Navigation = () => {
         }
     };
 
-    const handleMouseup = () => {
+    const handleMouseUp = () => {
         isResizingRef.current = false;
         document.removeEventListener("mousemove", handleMouseMove);
-        document.removeEventListener("mouseup", handleMouseup);
+        document.removeEventListener("mouseup", handleMouseUp);
     };
 
-    const resetwith = () => {
+    const resetWidth = () => {
         if (sidebarRef.current && navbarRef.current) {
             setIsCollapsed(false);
             setIsResetting(true);
@@ -97,7 +102,7 @@ export const Navigation = () => {
             sidebarRef.current.style.width = isMobile ? "100%" : "240px";
             navbarRef.current.style.setProperty(
                 "width",
-                isMobile ? "0" : "calc(100%-240px)"
+                isMobile ? "0" : "calc(100% - 240px)"
             );
             navbarRef.current.style.setProperty(
                 "left",
@@ -118,8 +123,11 @@ export const Navigation = () => {
             setTimeout(() => setIsResetting(false), 300);
         }
     };
+
     const handleCreate = () => {
-        const promise = create({ title: "Untitled" });
+        const promise = create({ title: "Untitled" }).then((documentId) =>
+            router.push(`/documents`)
+        );
 
         toast.promise(promise, {
             loading: "Creating a new note...",
@@ -127,6 +135,7 @@ export const Navigation = () => {
             error: "Failed to create a new note.",
         });
     };
+
     return (
         <>
             <aside
@@ -156,7 +165,7 @@ export const Navigation = () => {
                         onClick={search.onOpen}
                     />
                     <Item
-                        label="Setitng"
+                        label="Settings"
                         icon={Settings}
                         onClick={settings.onOpen}
                     />
@@ -187,27 +196,34 @@ export const Navigation = () => {
                 </div>
                 <div
                     onMouseDown={handleMouseDown}
-                    onClick={resetwith}
-                    className="opacity-0  group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-pimary/10 right-0 top-0"
+                    onClick={resetWidth}
+                    className="opacity-0 group-hover/sidebar:opacity-100 transition cursor-ew-resize absolute h-full w-1 bg-primary/10 right-0 top-0"
                 />
             </aside>
             <div
                 ref={navbarRef}
                 className={cn(
-                    "absolute top-0 z-[99999] w-[calc(100%-240px)]",
+                    "absolute top-0 z-[99999] left-60 w-[calc(100%-240px)]",
                     isResetting && "transition-all ease-in-out duration-300",
                     isMobile && "left-0 w-full"
                 )}
             >
-                <nav className="bg-transparent px-3 py-2 w-full">
-                    {isCollapsed && (
-                        <MenuIcon
-                            onClick={resetwith}
-                            role="button"
-                            className="h-6 w-6 text-muted-foreground"
-                        />
-                    )}
-                </nav>
+                {!!params.documentId ? (
+                    <Navbar
+                        isCollapsed={isCollapsed}
+                        onResetWidth={resetWidth}
+                    />
+                ) : (
+                    <nav className="bg-transparent px-3 py-2 w-full">
+                        {isCollapsed && (
+                            <MenuIcon
+                                onClick={resetWidth}
+                                role="button"
+                                className="h-6 w-6 text-muted-foreground"
+                            />
+                        )}
+                    </nav>
+                )}
             </div>
         </>
     );
