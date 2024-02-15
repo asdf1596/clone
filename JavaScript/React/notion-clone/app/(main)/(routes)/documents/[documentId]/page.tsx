@@ -1,10 +1,11 @@
 "use client";
 
-import { useQuery } from "convex/react";
-
+import { Toolbar } from "@/components/toolbar";
+import { Cover } from "@/components/ui/cover";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { Toolbar } from "@/app/(main)/_components/toolbar";
+import { useMutation, useQuery } from "convex/react";
 
 interface DocumentIdPageProps {
     params: {
@@ -16,19 +17,32 @@ const DocumentIdPage = ({ params }: DocumentIdPageProps) => {
     const document = useQuery(api.documents.getById, {
         documentId: params.documentId,
     });
+
+    const update = useMutation(api.documents.update);
+
+    const onChange = (content: string) => {
+        update({
+            id: params.documentId,
+            content,
+        });
+    };
+
     if (document === undefined) {
-        return <div>Loading...</div>;
+        return <div>Not Founda</div>;
     }
 
     if (document === null) {
-        return (
-            <div className="pb-40">
-                <div className="h-[35wh]" />
-                <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
-                    <Toolbar initialData={document} />
-                </div>
-            </div>
-        );
+        return <div>Not found</div>;
     }
+
+    return (
+        <div className="pb-40">
+            <Cover url={document.coverImage} />
+            <div className="md:max-w-3xl lg:max-w-4xl mx-auto">
+                <Toolbar initialData={document} />
+            </div>
+        </div>
+    );
 };
+
 export default DocumentIdPage;
